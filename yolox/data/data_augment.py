@@ -139,6 +139,33 @@ def _mirror(image, boxes, prob=0.5):
     return image, boxes
 
 
+def legacy_preproc(image, input_size, mean, std, swap=(2, 0, 1)):
+    if len(image.shape) == 3:
+        padded_img = np.ones((input_size[0], input_size[1], 3)) * 114.0
+    else:
+        padded_img = np.ones(input_size) * 114.0
+
+    img = np.array(image)
+    r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
+    resized_img = cv2.resize(
+        img,
+        (int(img.shape[1] * r), int(img.shape[0] * r)),
+        interpolation=cv2.INTER_LINEAR,
+    ).astype(np.float32)
+    padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+
+    padded_img = padded_img[:, :, ::-1]
+    padded_img /= 255.0
+    if mean is not None:
+        padded_img -= mean
+    if std is not None:
+        padded_img /= std
+    padded_img = padded_img.transpose(swap)
+    padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
+
+    return padded_img, r
+
+
 def preproc(img, input_size, swap=(2, 0, 1)):
     if len(img.shape) == 3:
         padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
@@ -155,6 +182,7 @@ def preproc(img, input_size, swap=(2, 0, 1)):
 
     padded_img = padded_img.transpose(swap)
     padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
+
     return padded_img, r
 
 
@@ -207,6 +235,84 @@ class TrainTransform:
             : self.max_labels
         ]
         padded_labels = np.ascontiguousarray(padded_labels, dtype=np.float32)
+        return image_t, padded_labels
+
+
+class MOTTrainTransform:
+    def __init__(
+        self,
+        max_labels=50,
+        flip_prob=0.5,
+        hsv_prob=1.0,
+        rgb_means=None,
+        std=None,
+        legacy=True,
+    ):
+        self.max_labels = max_labels
+        self.flip_prob = flip_prob
+        self.hsv_prob = hsv_prob
+        self.rgb_means = rgb_means
+        self.std = std
+        self.legacy = legacy
+
+    def __call__(self, image, targets, input_dim):
+        boxes = targets[:, :4].copy()
+        labels = targets[:, 4].copy()
+        ids = targets[:, 5].copy()
+        if len(boxes) == 0:
+            targets = np.zeros((self.max_labels, 6), dtype=np.float32)
+            if self.legacy:
+                image, r_o = legacy_preproc(image, input_dim, self.rgb_means, self.std)
+            else:
+                image, r_o = preproc(image, input_dim)
+            return image, targets
+
+        image_o = image.copy()
+        targets_o = targets.copy()
+        height_o, width_o, _ = image_o.shape
+        boxes_o = targets_o[:, :4]
+        labels_o = targets_o[:, 4]
+        ids_o = targets_o[:, 5]
+        # bbox_o: [xyxy] to [c_x,c_y,w,h]
+        boxes_o = xyxy2cxcywh(boxes_o)
+
+        if random.random() < self.hsv_prob:
+            augment_hsv(image)
+        image_t, boxes = _mirror(image, boxes, self.flip_prob)
+        height, width, _ = image_t.shape
+        if self.legacy:
+            image_t, r_ = legacy_preproc(image_t, input_dim, self.rgb_means, self.std)
+        else:
+            image_t, r_ = preproc(image_t, input_dim)
+        # boxes [xyxy] 2 [cx,cy,w,h]
+        boxes = xyxy2cxcywh(boxes)
+        boxes *= r_
+
+        mask_b = np.minimum(boxes[:, 2], boxes[:, 3]) > 1
+        boxes_t = boxes[mask_b]
+        labels_t = labels[mask_b]
+        ids_t = ids[mask_b]
+
+        if len(boxes_t) == 0:
+            if self.legacy:
+                image_t, r_o = legacy_preproc(image_o, input_dim, self.rgb_means, self.std)
+            else:
+                image_t, r_o = preproc(image_o, input_dim)
+            boxes_o *= r_o
+            boxes_t = boxes_o
+            labels_t = labels_o
+            ids_t = ids_o
+
+        labels_t = np.expand_dims(labels_t, 1)
+        ids_t = np.expand_dims(ids_t, 1)
+
+        targets_t = np.hstack((labels_t, boxes_t, ids_t))
+        padded_labels = np.zeros((self.max_labels, 6))
+        padded_labels[range(len(targets_t))[: self.max_labels]] = targets_t[
+            : self.max_labels
+        ]
+        padded_labels = np.ascontiguousarray(padded_labels, dtype=np.float32)
+
         return image_t, padded_labels
 
 
