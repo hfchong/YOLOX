@@ -194,7 +194,7 @@ class Exp(BaseExp):
 
         return train_loader
 
-    def random_resize(self, data_loader, epoch, rank, is_distributed):
+    def random_resize(self, epoch, rank, is_distributed):
         tensor = torch.LongTensor(2).cuda()
 
         if rank == 0:

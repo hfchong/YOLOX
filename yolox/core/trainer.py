@@ -274,7 +274,7 @@ class Trainer:
         # random resizing
         if (self.progress_in_iter + 1) % 10 == 0:
             self.input_size = self.exp.random_resize(
-                self.train_loader, self.epoch, self.rank, self.is_distributed
+                self.epoch, self.rank, self.is_distributed
             )
 
     @property
