@@ -96,6 +96,7 @@ class Trainer:
 
         inps, targets = self.prefetcher.next()
         inps = inps.to(self.data_type)
+        targets = targets[:, :, :5]  # For tracking, last dimension of targets is 6, but we only need 5
         targets = targets.to(self.data_type)
         targets.requires_grad = False
         inps, targets = self.exp.preprocess(inps, targets, self.input_size)
