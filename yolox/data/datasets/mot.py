@@ -26,12 +26,12 @@ class MOTDataset(Dataset):
         """MOT dataset initialization. Annotation data are read into memory by COCO API.
         
         Args:
-            data_dir: dataset root directory
+            data_dir: Dataset root directory
             json_file: COCO json file name
             name: Name of the directory containing the images
-            img_size: target image size after pre-processing
-            preproc: data augmentation strategy
-            cache: whether to cache the dataset in memory
+            img_size: Target image size after pre-processing
+            preproc: Pre-processing function
+            cache: Whether to cache the dataset in memory
         """
         super().__init__(img_size)
         if data_dir is None:
