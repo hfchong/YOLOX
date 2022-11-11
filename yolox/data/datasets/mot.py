@@ -117,8 +117,8 @@ class MOTDataset(Dataset):
         height = im_ann["height"]
 
         args = im_ann["darwin_url"].split("/")
-+       frame_id = int(args[-1])  # im_ann["frame_id"]
-+       video_id = int(args[-3])  # im_ann["video_id"]
+        frame_id = int(args[-1])  # im_ann["frame_id"]
+        video_id = int(args[-3])  # im_ann["video_id"]
 
         anno_ids = self.coco.getAnnIds(imgIds=[int(id_)], iscrowd=False)
         annotations = self.coco.loadAnns(anno_ids)
