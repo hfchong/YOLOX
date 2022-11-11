@@ -334,16 +334,16 @@ class ValTransform:
         data
     """
 
-    def __init__(self, swap=(2, 0, 1), legacy=False):
+    def __init__(self, swap=(2, 0, 1), legacy=False, rgb_means=None, std=None):
         self.swap = swap
         self.legacy = legacy
+        self.rgb_means = rgb_means
+        self.std = std
 
     # assume input is cv2 img for now
     def __call__(self, img, res, input_size):
-        img, _ = preproc(img, input_size, self.swap)
         if self.legacy:
-            img = img[::-1, :, :].copy()
-            img /= 255.0
-            img -= np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
-            img /= np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+            img, _ = legacy_preproc(img, input_size, self.rgb_means, self.std, self.swap)
+        else:
+            img, _ = preproc(img, input_size, self.swap)
         return img, np.zeros((1, 5))
