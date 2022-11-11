@@ -45,9 +45,9 @@ class MOTDataset(Dataset):
         self.class_ids = sorted(self.coco.getCatIds())
         cats = self.coco.loadCats(self.coco.getCatIds())
         self._classes = tuple([c["name"] for c in cats])
+        self.img_size = img_size
         self.annotations = self._load_coco_annotations()
         self.name = name
-        self.img_size = img_size
         self.preproc = preproc
         self.imgs = None
         if cache:
@@ -115,8 +115,11 @@ class MOTDataset(Dataset):
         im_ann = self.coco.loadImgs(id_)[0]
         width = im_ann["width"]
         height = im_ann["height"]
-        frame_id = im_ann["frame_id"]
-        video_id = im_ann["video_id"]
+
+        args = im_ann["darwin_url"].split("/")
++       frame_id = int(args[-1])  # im_ann["frame_id"]
++       video_id = int(args[-3])  # im_ann["video_id"]
+
         anno_ids = self.coco.getAnnIds(imgIds=[int(id_)], iscrowd=False)
         annotations = self.coco.loadAnns(anno_ids)
         objs = []
@@ -136,7 +139,7 @@ class MOTDataset(Dataset):
         for ix, obj in enumerate(objs):
             res[ix, 0:4] = obj["clean_bbox"]
             res[ix, 4] = self.class_ids.index(obj["category_id"])
-            res[ix, 5] = obj["track_id"]
+            res[ix, 5] = obj["id"]  # obj["track_id"]
         
         r = min(self.img_size[0] / height, self.img_size[1] / width)
         res[:, :4] *= r

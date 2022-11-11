@@ -37,7 +37,7 @@ def get_exp(exp_file=None, config=None, exp_name=None):
     assert (
         (exp_file is not None and config is not None) or exp_name is not None
     ), "plz provide exp file or exp name."
-    if exp_file is not None:
+    if exp_file is not None and config is not None:
         return get_exp_by_file(exp_file, config)
     else:
         return get_exp_by_name(exp_name)

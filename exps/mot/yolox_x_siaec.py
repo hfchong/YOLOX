@@ -72,10 +72,10 @@ class Exp(BaseExp):
         self.nmsthre = config.nmsthre
         
 
-    def get_data_loader(self, batch_size, is_distributed, no_aug=False, cache_img=False)):
+    def get_data_loader(self, batch_size, is_distributed, no_aug=False, cache_img=False):
         from yolox.data import (
             MOTDataset,
-            TrainTransform,
+            MOTTrainTransform,
             YoloBatchSampler,
             DataLoader,
             InfiniteSampler,
@@ -91,7 +91,7 @@ class Exp(BaseExp):
                 name='images',
                 img_size=self.input_size,
                 preproc=MOTTrainTransform(
-                    max_labels=self.max_labels,
+                    max_labels=100,
                     flip_prob=self.flip_prob,
                     hsv_prob=self.hsv_prob,
                     rgb_means=self.rgb_means,
@@ -106,7 +106,7 @@ class Exp(BaseExp):
             mosaic=not no_aug,
             img_size=self.input_size,
             preproc=MOTTrainTransform(
-                max_labels=self.max_labels,
+                max_labels=200,
                 flip_prob=self.flip_prob,
                 hsv_prob=self.hsv_prob,
                 rgb_means=self.rgb_means,
@@ -153,7 +153,7 @@ class Exp(BaseExp):
     def get_eval_loader(self, batch_size, is_distributed, testdev=False):
         from yolox.data import MOTDataset, ValTransform
 
-        dataset = MOTDataset(
+        valdataset = MOTDataset(
             data_dir=self.data_dir,
             json_file=self.val_ann if not testdev else self.test_ann,
             name='images',
