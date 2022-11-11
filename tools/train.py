@@ -6,6 +6,7 @@ import argparse
 import random
 import warnings
 from loguru import logger
+import yaml
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -40,6 +41,12 @@ def make_parser():
         default=None,
         type=str,
         help="plz input your experiment description file",
+    )
+    parser.add_argument(
+        "--yaml_config_file",
+        default=None,
+        type=str,
+        help="plz input your yaml configuration file",
     )
     parser.add_argument(
         "--resume", default=False, action="store_true", help="resume training"
@@ -118,10 +125,21 @@ def main(exp: Exp, args):
     trainer.train()
 
 
+class Config:
+    def __init__(self, config_dict):          
+        for key in config_dict:
+            setattr(self, key, config_dict[key])
+
+
 if __name__ == "__main__":
     configure_module()
     args = make_parser().parse_args()
-    exp = get_exp(args.exp_file, args.name)
+    if hasattr(args, "yaml_config_file") and args.yaml_config_file is not None:
+        config = Config(yaml.full_load(open(args.yaml_config_file, "r")))
+    else:
+        config = None
+    
+    exp = get_exp(args.exp_file, config, args.name)
     exp.merge(args.opts)
 
     if not args.experiment_name:
