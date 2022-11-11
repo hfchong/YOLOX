@@ -10,7 +10,7 @@ from yolox.data import get_yolox_datadir
 
 
 class Exp(BaseExp):
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config):
         super().__init__()
 
         # Model config
@@ -29,7 +29,6 @@ class Exp(BaseExp):
         self.test_ann = config.test_ann
         if hasattr(config, "random_size"):
             self.random_size = config.random_size
-        self.cache = config.cache
 
         # Transform config
         self.mosaic_prob = config.mosaic_prob
@@ -65,6 +64,7 @@ class Exp(BaseExp):
         self.print_interval = config.print_interval
         self.eval_interval = config.eval_interval
         self.save_history_ckpt = config.save_history_ckpt
+        self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 
         # Test config
         self.test_size = config.test_size
@@ -72,7 +72,7 @@ class Exp(BaseExp):
         self.nmsthre = config.nmsthre
         
 
-    def get_data_loader(self, batch_size, is_distributed, no_aug=False):
+    def get_data_loader(self, batch_size, is_distributed, no_aug=False, cache_img=False)):
         from yolox.data import (
             MOTDataset,
             TrainTransform,
@@ -98,7 +98,7 @@ class Exp(BaseExp):
                     std=self.std,
                     legacy=self.legacy
                 ),
-                cache=self.cache,
+                cache=cache_img,
             )
 
         dataset = MosaicDetection(
@@ -163,7 +163,6 @@ class Exp(BaseExp):
                 rgb_means=self.rgb_means,
                 std=self.std,
             ),
-            cache=self.cache,
         )
 
         if is_distributed:
