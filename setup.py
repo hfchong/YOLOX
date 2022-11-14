@@ -25,7 +25,8 @@ def get_package_dir():
 def get_install_requirements():
     with open("requirements.txt", "r", encoding="utf-8") as f:
         reqs = [x.strip() for x in f.read().splitlines()]
-    reqs = [x for x in reqs if not x.startswith("#")]
+    reqs = [x for x in reqs if not x.startswith("#") and not x.startswith('-f')]
+    print(reqs)
     return reqs
 
 
